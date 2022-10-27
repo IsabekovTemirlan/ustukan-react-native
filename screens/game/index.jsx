@@ -1,7 +1,6 @@
-import React from 'react'
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Draggable from 'react-native-draggable';
-import { Button, StyleSheet, Text, View, Alert } from 'react-native';
+import { Button, StyleSheet, Text, View, Alert, Image } from 'react-native';
 import { getRundomItemsFromArray, isNear } from './utils';
 import { itemsObjects, persons as personsObjects } from '../game/config';
 
@@ -37,7 +36,14 @@ export default ({ route: { params } }) => {
   }
 
   const onApply = () => {
-    Alert.alert('Сиз жеңдиңиз!');
+    const errors = [];
+    items.forEach((i) => {
+      if (!i?.personId) return;
+      const person = persons.find(p => p.id === i.personId);
+      if (!person?.posibleItems?.includes(i.id)) errors.push(`${i.text} - ${person.title}`);
+    });
+    if (errors.length) Alert.alert('Cиз Утулдуңуз!', ['Туурам эмес тартуулар: \n', ...errors].join('\n'));
+    else Alert.alert('Сиз жеңдиңиз!');
   }
 
   const onPressPerson = (person) => {
@@ -47,6 +53,15 @@ export default ({ route: { params } }) => {
       selectedItems?.map((e) => e.text).join('\n') || 'Табак бош'
     );
   }
+
+  const scaleHeight = ({ source, desiredWidth }) => {
+    const img = Image.resolveAssetSource(source);
+    if (img?.height && img?.width) return desiredWidth / width * height;
+    return 50;
+}
+
+const imageWidth = 56;
+const images = items.map(i => `../../assets/images/bash.png`);
 
   return (
     <View style={styles.container}>
@@ -62,22 +77,34 @@ export default ({ route: { params } }) => {
         <Text onPress={() => onPressPerson(person)} style={styles.person_title}>{person.title}</Text>
       </View>)}
       <View style={styles.center}></View>
-      {items?.map(item => (
-        <Draggable
-          key={item.id}
-          id={item.id}
-          x={item.x} y={item.y}
-          renderSize={56}
-          renderColor='#ed553b'
-          debug={false}
-          renderText={item.text}
-          isCircle
-          shouldReverse
-          touchableOpacityProps={{ activeOpactiy: .5 }}
-          onDragRelease={(_, event) => onRelease(event)}
-          onPressOut={() => setCurrent(item.id)}
-        />
-      ))}
+      {items?.map((item) => {
+        const imageHeigh = scaleHeight({
+          source: item,
+          desiredWidth: imageWidth
+        });
+        return (
+          <Draggable
+            key={item.id}
+            id={item.id}
+            x={item.x} y={item.y}
+            renderSize={56}
+            isCircle
+            shouldReverse
+            touchableOpacityProps={{ activeOpactiy: .5 }}
+            onDragRelease={(_, event) => onRelease(event)}
+            onPressOut={() => setCurrent(item.id)}
+          >
+            <Image
+              source={item.img}
+              style={{
+                width: imageWidth,
+                height: imageHeigh
+              }}
+            />
+            <Text style={{width: 60, textAlign: 'center', fontSize: 11, color: '#fff', }}>{item.text}</Text>
+          </Draggable>
+        )
+      })}
     </View>
   )
 }
@@ -85,24 +112,25 @@ export default ({ route: { params } }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#e9f4ff',
+    backgroundColor: '#DCDCDD',
     alignItems: 'center',
     justifyContent: 'center',
   },
   person: {
     position: 'absolute',
-    backgroundColor: '#ccc',
+    backgroundColor: '#4C5C68',
     padding: 5,
     borderRadius: 10,
     height: 90,
     width: 70,
   },
   person_title: {
-    textAlign: 'center'
+    textAlign: 'center',
+    color: '#fff'
   },
   center: {
     borderRadius: 50,
-    backgroundColor: "#20639b",
+    backgroundColor: "#46494C",
     width: 220,
     height: 240
   },
